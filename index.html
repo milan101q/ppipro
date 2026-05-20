@@ -4,10 +4,988 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PPIPro.click | Pre Purchase Vehicle Inspection Report System</title>
+    
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Load Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Load React 18 & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Load Babel Standalone for In-Browser JSX/TSX Compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
+
+    <!-- Configure Tailwind theme spacing & custom properties -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            boxShadow: {
+              'premium': '0 20px 40px -15px rgba(15, 23, 42, 0.08)',
+            }
+          }
+        }
+      }
+    </script>
+    
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+      /* Custom active state micro-transition styles */
+      .fade-in-active {
+        transition: opacity 0.30s ease-out;
+      }
+    </style>
   </head>
-  <body>
+  <body class="bg-slate-50/50 text-slate-800 antialiased selection:bg-teal-100 selection:text-teal-900">
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Consolidated React App Script Block -->
+    <script type="text/babel" data-type="module">
+      const { useState, useEffect } = React;
+
+      // ====================================================
+      // STATIC REPLICA DATA (PORTED FROM MOCKDATA.TS)
+      // ====================================================
+      const CHANNELS_CHECKLIST = [
+        {
+          name: "Interior/Exterior Condition",
+          items: [
+            "Number of Key(s)",
+            "Entertainment/Radio",
+            "Navigation/Back up Camera",
+            "Wiper Operation/Wiper Blades",
+            "Windshield/Window Condition",
+            "Upholstery/Carpet",
+            "AC Compressor/Controls",
+            "Heater & Defroster"
+          ]
+        },
+        {
+          name: "Under Hood & Performance",
+          items: [
+            "Engine Fault Codes",
+            "Engine Noise",
+            "Emissions Pass",
+            "Fluids: Oil/Coolant/Brake Fluid",
+            "Engine Air Filter",
+            "Belts/Tensioners (condition)"
+          ]
+        },
+        {
+          name: "Brakes & Suspension",
+          items: [
+            "Front Brake Pads & Rotors",
+            "Rear Brake Pads & Rotors",
+            "LF/RF Brake Lining Condition",
+            "Engine Oil/Fluid Leaks",
+            "Front & Rear Shock Absorbers",
+            "Chassis Nuts & Bolts"
+          ]
+        },
+        {
+          name: "Tire Tread & Pressure",
+          items: [
+            "LF/RF Tire Tread & PSI",
+            "LR/RR Tire Tread & PSI",
+            "Spare Tire (if equipped)"
+          ]
+        }
+      ];
+
+      const CLIENT_BENEFITS = [
+        {
+          title: "For Mobile Inspectors & Mechanics",
+          description: "Built strictly for fast, single-handed operation in the auto yard or garage. No clunky software or signal delays.",
+          badge: "For Inspectors",
+          points: [
+            "Complete comprehensive inspections in under 5 minutes on standard mobile phones.",
+            "Automatic offline draft saving guarantees your inspection answers are never lost mid-job.",
+            "Instant NHTSA API VIN lookup decodes make, model, year, and production data automatically."
+          ]
+        },
+        {
+          title: "For Auto Inspectors & Buyers",
+          description: "Generate crystal-clear, professional PDF vehicle evaluations that inspire confidence and accelerate buying decisions.",
+          badge: "For Clients & Buyers",
+          points: [
+            "Impeccably clean, professional multi-page PDF output complete with color-coded inspection scores.",
+            "No-login cloud viewing links make sharing reports with buyers via SMS or email as easy as one tap.",
+            "High-resolution detailed damage photos embedded cleanly directly in the report pages.",
+            "A uniform visual ledger layout built strictly to prevent vehicle transaction friction."
+          ]
+        }
+      ];
+
+      // ====================================================
+      // CUSTOM CUSTOM RESILIENT SVG ICON COMPONENTS
+      // ====================================================
+      const Icons = {
+        Car: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
+            <circle cx="7" cy="17" r="2" />
+            <path d="M9 17h6" />
+            <circle cx="17" cy="17" r="2" />
+          </svg>
+        ),
+        Shield: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 13c0 5-3.5 7.5-7.66 9.7a1 1 0 0 1-.68 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .76-.97l8-2a1 1 0 0 1 .48 0l8 2A1 1 0 0 1 20 6z" />
+          </svg>
+        ),
+        Smartphone: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
+            <path d="M12 18h.01" />
+          </svg>
+        ),
+        FileSpreadsheet: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+            <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+            <path d="M8 13h8" />
+            <path d="M8 17h8" />
+            <path d="M8 9h2" />
+          </svg>
+        ),
+        Lock: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+        ),
+        Sparkles: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+          </svg>
+        ),
+        Check: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+        ),
+        ArrowRight: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12h14" />
+            <path d="m12 5 7 7-7 7" />
+          </svg>
+        ),
+        ShieldCheck: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 13c0 5-3.5 7.5-7.66 9.7a1 1 0 0 1-.68 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .76-.97l8-2a1 1 0 0 1 .48 0l8 2A1 1 0 0 1 20 6v7z" />
+            <path d="m9 12 2 2 4-4" />
+          </svg>
+        ),
+        Mail: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="20" height="16" x="2" y="4" rx="2" />
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+          </svg>
+        ),
+        Phone: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+          </svg>
+        ),
+        MapPin: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+        ),
+        Zap: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          </svg>
+        ),
+        RefreshCw: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+            <path d="M16 16h5v5" />
+          </svg>
+        ),
+        Layers: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2" />
+            <polygon points="2 17 12 22 22 17" />
+            <polygon points="2 12 12 17 22 12" />
+          </svg>
+        ),
+        LayoutDashboard: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="7" height="9" x="3" y="3" rx="1" />
+            <rect width="7" height="5" x="14" y="3" rx="1" />
+            <rect width="7" height="9" x="14" y="10" rx="1" />
+            <rect width="7" height="5" x="3" y="14" rx="1" />
+          </svg>
+        ),
+        CheckSquare: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+            <path d="m9 12 2 2 4-4" />
+          </svg>
+        ),
+        FileText: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+            <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+            <path d="M10 9H8" />
+            <path d="M16 13H8" />
+            <path d="M16 17H8" />
+          </svg>
+        ),
+        Search: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+        ),
+        Share2: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <path d="m8.59 13.51 6.83 3.98" />
+            <path d="m15.41 6.51-6.82 3.98" />
+          </svg>
+        ),
+        Eye: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        ),
+        ChevronRight: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        ),
+        CornerDownRight: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m15 10-5 5-5-5" />
+            <path d="M4 4v7a4 4 0 0 0 4 4h12" />
+          </svg>
+        ),
+        FileDown: ({ className }) => (
+          <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+            <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+            <path d="M12 18v-6" />
+            <path d="m9 15 3 3 3-3" />
+          </svg>
+        )
+      };
+
+      // ====================================================
+      // VISUAL SHOWCASE REACT PORT (FROM VISUALSHOWCASE.TSX)
+      // ====================================================
+      function VisualShowcase() {
+        const [activeTab, setActiveTab] = useState('pdf');
+        const [pdfPage, setPdfPage] = useState(1);
+
+        return (
+          <div className="space-y-6">
+            {/* Tab controls to toggle screenshots/mockups */}
+            <div className="flex flex-wrap gap-2 justify-center">
+              {[
+                { id: 'pdf', label: 'Sample PDF Inspection Report', icon: Icons.FileText },
+                { id: 'dash', label: 'Inspector Mobile Dashboard', icon: Icons.LayoutDashboard },
+                { id: 'checklist', label: 'Checklist Template Manager', icon: Icons.CheckSquare }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold transition-all border outline-none ${
+                    activeTab === tab.id
+                      ? 'bg-slate-900 border-slate-900 text-white shadow-xl translate-y-[-1px]'
+                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <tab.icon className="w-4 h-4" />
+                  <span>{tab.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Vector browser/device frame containing high fidelity replica UX screenshots */}
+            <div className="bg-slate-900 p-3 sm:p-5 rounded-3xl border border-slate-800 shadow-premium max-w-4xl mx-auto overflow-hidden">
+              {/* Browser Top Window Ribbon */}
+              <div className="flex items-center justify-between px-3 pb-3 border-b border-slate-800 shrink-0">
+                <div className="flex gap-1.5">
+                  <span className="w-3 h-3 bg-red-400 border border-red-500 rounded-full"></span>
+                  <span className="w-3 h-3 bg-amber-400 border border-amber-500 rounded-full"></span>
+                  <span className="w-3 h-3 bg-emerald-400 border border-emerald-500 rounded-full"></span>
+                </div>
+                <div className="bg-slate-950 px-8 py-1 rounded-lg text-[10px] font-mono text-slate-500 font-medium select-none truncate max-w-sm">
+                  https://ppipro.click/s/report_view_#483970
+                </div>
+                <span className="text-[10px] font-mono font-bold text-slate-700 select-none hidden sm:block">DEV PREVIEW</span>
+              </div>
+
+              {/* Content Viewer */}
+              <div className="bg-slate-50 rounded-2xl p-2 sm:p-6 mt-4 min-h-[460px] relative overflow-hidden text-slate-700 fade-in-active">
+                
+                {activeTab === 'pdf' && (
+                  <div className="space-y-4">
+                    {/* PDF Page Toggle Buttons inside viewport */}
+                    <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-500">Inspection Spec: #483970</span>
+                        <span className="text-[10px] bg-teal-50 text-teal-700 px-2.5 py-0.5 rounded-full font-mono font-semibold">FORD Explorer 2018</span>
+                      </div>
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setPdfPage(1)}
+                          className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+                            pdfPage === 1 ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                        >
+                          Page 1: Digital Report
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPdfPage(2)}
+                          className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+                            pdfPage === 2 ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                        >
+                          Page 2: Evidence Photos
+                        </button>
+                      </div>
+                    </div>
+
+                    {pdfPage === 1 ? (
+                      /* PAGE 1: HIGH FIDELITY RECONSTRUCTION */
+                      <div className="bg-white border border-slate-300 shadow-xl rounded-xl p-4 sm:p-8 relative overflow-hidden max-w-3xl mx-auto text-[9px] font-sans text-slate-800 leading-tight">
+                        {/* Header Details */}
+                        <div className="flex flex-col sm:flex-row justify-between items-start border-b border-slate-200 pb-3 gap-3">
+                          <div>
+                            <h3 className="font-extrabold text-slate-900 text-xl tracking-tight leading-none uppercase">Pre Purchase Inspection LLC</h3>
+                            <span className="text-xs font-bold text-slate-700 block mt-1">Vehicle Inspection Report &nbsp;<span className="text-slate-400 font-normal">#483970</span></span>
+                          </div>
+                          <div className="text-left sm:text-right text-[10px] space-y-0.5 font-medium text-slate-500">
+                            <p className="font-bold text-slate-800">Pre Purchase Inspection LLC</p>
+                            <p>25354 Pleasant Valley Rd STE 135</p>
+                            <p>Chantilly, VA 20152</p>
+                            <p className="font-bold text-slate-700">(571)349-6760</p>
+                          </div>
+                        </div>
+
+                        {/* Rating Color box legend */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 pb-3 border-b border-slate-200 font-bold text-[8.5px]">
+                          <div className="flex items-center gap-1.5 text-emerald-800">
+                            <span className="w-3.5 h-3.5 bg-emerald-500 rounded text-white flex items-center justify-center font-bold text-[8px]">X</span>
+                            <span>Checked & OK</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-blue-800">
+                            <span className="w-3.5 h-3.5 bg-blue-500 rounded text-white flex items-center justify-center font-bold text-[8px]">X</span>
+                            <span>Normal for Age/Mileage</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-amber-800">
+                            <span className="w-3.5 h-3.5 bg-amber-500 rounded text-white flex items-center justify-center font-bold text-[8px]">X</span>
+                            <span>Future Attention</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-red-800">
+                            <span className="w-3.5 h-3.5 bg-red-500 rounded text-white flex items-center justify-center font-bold text-[8px]">X</span>
+                            <span>Immediate Attention</span>
+                          </div>
+                        </div>
+
+                        {/* Vehicle Metadata boxes */}
+                        <div className="bg-slate-50 rounded-lg p-3 my-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-[10px] border border-slate-200/80 font-mono">
+                          <div>
+                            <span className="text-slate-400 block text-[8px] uppercase font-bold leading-none mb-1">VIN Number</span>
+                            <strong className="text-slate-800">1FM5K8AR3JGC57329</strong>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[8px] uppercase font-bold leading-none mb-1">Year/Make</span>
+                            <strong className="text-slate-800">2018 FORD</strong>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[8px] uppercase font-bold leading-none mb-1">Model Spec</span>
+                            <strong className="text-slate-800">Explorer</strong>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[8px] uppercase font-bold leading-none mb-1">Tested Mileage / Date</span>
+                            <strong className="text-slate-800">12,345 mi / 05/20/26</strong>
+                          </div>
+                        </div>
+
+                        {/* PDF Table Grid */}
+                        <div className="space-y-3">
+                          {/* Section 1 */}
+                          <div>
+                            <div className="bg-slate-100 px-2 py-1 font-bold text-slate-600 text-[8px] uppercase tracking-wider mb-1.5 rounded">
+                              Interior / Exterior
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
+                              <div className="flex justify-between items-center border-b border-dashed border-slate-100 pb-1">
+                                <span className="font-semibold text-slate-800">Number of Key(s) <span className="text-red-500 italic text-[8.5px]">1</span></span>
+                                <span className="bg-emerald-500 text-white font-mono font-bold px-1.5 py-0.5 rounded text-[8px] leading-none uppercase">Checked</span>
+                              </div>
+                              <div className="flex justify-between items-center border-b border-dashed border-slate-100 pb-1">
+                                <span className="font-semibold text-slate-800">Horn Operation <span className="text-red-500 italic text-[8.5px]">not working</span></span>
+                                <span className="bg-red-500 text-white font-mono font-bold px-1.5 py-0.5 rounded text-[8px] leading-none uppercase">Immediate</span>
+                              </div>
+                              <div className="flex justify-between items-center border-b border-dashed border-slate-100 pb-1 flex-row">
+                                <span className="font-semibold text-slate-800">Entertainment / Radio</span>
+                                <span className="bg-emerald-500 text-white font-mono font-bold px-1.5 py-0.5 rounded text-[8px] leading-none uppercase">Checked</span>
+                              </div>
+                              <div className="flex justify-between items-center border-b border-dashed border-slate-100 pb-1">
+                                <span className="font-semibold text-slate-800">AC Compressor / Controls</span>
+                                <span className="bg-emerald-500 text-white font-mono font-bold px-1.5 py-0.5 rounded text-[8px] leading-none uppercase">Checked</span>
+                              </div>
+                              <div className="flex justify-between items-center border-b border-dashed border-slate-100 pb-1">
+                                <span className="font-semibold text-slate-800">Navigation / Backup Camera</span>
+                                <span className="bg-emerald-500 text-white font-mono font-bold px-1.5 py-0.5 rounded text-[8px] leading-none uppercase">Checked</span>
+                              </div>
+                              <div className="flex justify-between items-center border-b border-dashed border-slate-100 pb-1">
+                                <span className="font-semibold text-slate-800">Upholstery / Carpet</span>
+                                <span className="bg-amber-500 text-white font-mono font-bold px-1.5 py-0.5 rounded text-[8px] leading-none uppercase">Attention</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Section 2 */}
+                          <div>
+                            <div className="bg-slate-100 px-2 py-1 font-bold text-slate-600 text-[8px] uppercase tracking-wider mb-1.5 rounded">
+                              Under Vehicle
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
+                              <div className="flex justify-between items-center border-b border-dashed border-slate-100 pb-1">
+                                <span className="font-semibold text-slate-800">Front Shock Absorbers</span>
+                                <span className="bg-blue-500 text-white font-mono font-bold px-1.5 py-0.5 rounded text-[8px] leading-none uppercase">Normal</span>
+                              </div>
+                              <div className="flex justify-between items-center border-b border-dashed border-slate-100 pb-1">
+                                <span className="font-semibold text-slate-800">Engine Oil / Fluid Leaks <span className="text-red-500 italic text-[8.5px]">oil leak</span></span>
+                                <span className="bg-red-500 text-white font-mono font-bold px-1.5 py-0.5 rounded text-[8px] leading-none uppercase">Immediate</span>
+                              </div>
+                              <div className="flex justify-between items-center border-b border-dashed border-slate-100 pb-1">
+                                <span className="font-semibold text-slate-800">Front Suspension / Bushings</span>
+                                <span className="bg-blue-500 text-white font-mono font-bold px-1.5 py-0.5 rounded text-[8px] leading-none uppercase">Normal</span>
+                              </div>
+                              <div className="flex justify-between items-center border-b border-dashed border-slate-100 pb-1">
+                                <span className="font-semibold text-slate-800">Inspect Nuts & Bolts on Body Chassis</span>
+                                <span className="bg-amber-500 text-white font-mono font-bold px-1.5 py-0.5 rounded text-[8px] leading-none uppercase">Attention</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Section 3 */}
+                          <div>
+                            <div className="bg-slate-100 px-2 py-1 font-bold text-slate-600 text-[8px] uppercase tracking-wider mb-1.5 rounded">
+                              Under Hood
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
+                              <div className="flex justify-between items-center border-b border-dashed border-slate-100 pb-1">
+                                <span className="font-semibold text-slate-800">Engine Fault Codes</span>
+                                <strong className="text-slate-700 font-mono text-[9.5px]">No Codes found</strong>
+                              </div>
+                              <div className="flex justify-between items-center border-b border-dashed border-slate-100 pb-1">
+                                <span className="font-semibold text-slate-800">Fluids: Oil/Coolant Power Steering</span>
+                                <span className="bg-emerald-500 text-white font-mono font-bold px-1.5 py-0.5 rounded text-[8px] leading-none uppercase">Checked</span>
+                              </div>
+                              <div className="flex justify-between items-center border-b border-dashed border-slate-100 pb-1">
+                                <span className="font-semibold text-slate-800">Engine Noise Evaluation</span>
+                                <strong className="text-red-600 font-bold font-mono text-[9.5px]">Yes (Valve-train tap)</strong>
+                              </div>
+                              <div className="flex justify-between items-center border-b border-dashed border-slate-100 pb-1">
+                                <span className="font-semibold text-slate-800">Emissions Monitor Check</span>
+                                <strong className="text-slate-400 font-mono text-[9px]">N/A</strong>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* PDF Footer Disclaimer */}
+                        <div className="border-t border-slate-200 mt-6 pt-3 text-[7px] text-slate-400 font-medium leading-relaxed uppercase">
+                          DISCLAIMER: THIS REPORT IS BASED ON A VISUAL AND FUNCTIONAL ASSESSMENT AT THE TIME OF INSPECTION. IT WAS A STATIONARY INSPECTION WITHOUT A TEST DRIVE AND PROVIDES AN OVERVIEW OF THE VEHICLE&#39;S CONDITION AT THAT MOMENT. IT DOES NOT SERVE AS A WARRANTY OR GUARANTEE OF FUTURE PERFORMANCE.
+                        </div>
+                      </div>
+                    ) : (
+                      /* PAGE 2: HIGH RESOLUTION EVIDENCE PHOTOS */
+                      <div className="bg-white border border-slate-300 shadow-xl rounded-xl p-4 sm:p-8 relative overflow-hidden max-w-3xl mx-auto text-[10px] font-sans text-slate-800 leading-tight">
+                        <div className="text-center border-b border-slate-200 pb-4">
+                          <h4 className="font-extrabold text-slate-900 text-lg uppercase tracking-tight">Inspection Photos (Page 1 of 1)</h4>
+                          <p className="font-mono text-slate-500 text-xs mt-1">#483970 - 2018 FORD Explorer</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 py-6">
+                          <div className="space-y-2 text-center">
+                            <div className="aspect-[4/3] bg-slate-100 rounded-lg overflow-hidden border border-slate-200 shadow-sm relative">
+                              <img 
+                                src="https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=400" 
+                                alt="Under chassis coil springs" 
+                                className="w-full h-full object-cover"
+                                referrerPolicy="no-referrer"
+                              />
+                            </div>
+                            <span className="font-bold text-slate-600 block text-xs">Photo 1: Under-carriage Frame Rail, Shock Absorb, and Coils</span>
+                          </div>
+
+                          <div className="space-y-2 text-center">
+                            <div className="aspect-[4/3] bg-slate-100 rounded-lg overflow-hidden border border-slate-200 shadow-sm relative">
+                              <img 
+                                src="https://images.unsplash.com/photo-1525609004556-c46c7d6cf0a3?auto=format&fit=crop&q=80&w=400" 
+                                alt="Engine pulleys belt oil" 
+                                className="w-full h-full object-cover"
+                                referrerPolicy="no-referrer"
+                              />
+                            </div>
+                            <span className="font-bold text-slate-600 block text-xs">Photo 2: Serpentine Belt Pulleys and Timing Cover Oil Weep Leak</span>
+                          </div>
+                        </div>
+
+                        <div className="border-t border-slate-200 mt-12 pt-3 text-[7px] text-slate-400 font-medium leading-relaxed uppercase">
+                          DISCLAIMER: THIS REPORT IS BASED ON A VISUAL AND FUNCTIONAL ASSESSMENT AT THE TIME OF INSPECTION. IT WAS A STATIONARY INSPECTION WITHOUT A TEST DRIVE AND PROVIDES AN OVERVIEW OF THE VEHICLE&#39;S CONDITION AT THAT MOMENT. IT DOES NOT SERVE AS A WARRANTY OR GUARANTEE OF FUTURE PERFORMANCE.
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'dash' && (
+                  <div className="space-y-6">
+                    {/* Header Replica */}
+                    <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-slate-950 rounded-lg flex items-center justify-center text-white font-extrabold text-sm">P</div>
+                        <div className="text-left">
+                          <h4 className="font-extrabold text-slate-900 text-sm tracking-tight leading-none">PPIPro Applet</h4>
+                          <span className="text-[9px] text-slate-400 font-semibold font-mono">SECURE CLOUD PLATFORM</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse mt-1.5"></span>
+                        <span className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-lg">Inspector Active</span>
+                      </div>
+                    </div>
+
+                    {/* Hero Widget Section */}
+                    <div className="bg-slate-900 rounded-2xl p-5 text-white relative overflow-hidden text-left">
+                      <div className="absolute right-0 top-0 w-36 h-36 bg-teal-500/20 rounded-full filter blur-xl"></div>
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-10">
+                        <div>
+                          <h5 className="font-extrabold text-lg">Start Diagnosis</h5>
+                          <p className="text-slate-400 text-xs mt-0.5">Initialize a secure vehicular assessment. Access is private and synced in your cloud vault.</p>
+                        </div>
+                        <button type="button" className="bg-teal-500 hover:bg-teal-600 text-white text-xs font-bold px-4 py-2.5 rounded-lg shrink-0 flex items-center gap-1.5 shadow-sm">
+                          Start New Inspection
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Active Resumable Drafts */}
+                    <div className="space-y-2 text-left">
+                      <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest pl-1">
+                         ACTIVE RESUMABLE DRAFTS
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="bg-white border border-slate-200 rounded-xl p-3 flex justify-between items-center shadow-sm">
+                          <div>
+                            <span className="font-extrabold text-xs text-slate-800 block">2018 FORD Explorer</span>
+                            <span className="text-[10px] text-slate-400 block mt-0.5">Saved today, 7:02 PM EST</span>
+                          </div>
+                          <button type="button" className="bg-slate-100 text-slate-800 font-bold text-[10px] px-3 py-1.5 rounded-lg border border-slate-200">Resume</button>
+                        </div>
+                        <div className="bg-white border border-slate-200 rounded-xl p-3 flex justify-between items-center shadow-sm opacity-75">
+                          <div>
+                            <span className="font-extrabold text-xs text-slate-800 block">2015 Audi A4 Premium</span>
+                            <span className="text-[10px] text-slate-400 block mt-0.5">Saved yesterday, 4:10 PM EST</span>
+                          </div>
+                          <button type="button" className="bg-slate-100 text-slate-800 font-bold text-[10px] px-3 py-1.5 rounded-lg border border-slate-200">Resume</button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Recent Complete Reports List */}
+                    <div className="space-y-3 text-left">
+                      <div className="flex justify-between items-center">
+                        <h5 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Completed Evaluations</h5>
+                      </div>
+
+                      <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100 shadow-sm overflow-hidden">
+                        {[
+                          { v: "2018 FORD Explorer", vin: "1FM5K8AR3JGC5...", miles: "12,345", date: "05/20/2026", url: "https://drive.google.com/..." },
+                          { v: "2019 Toyota Highlander", vin: "5TDYK3EH7KS992...", miles: "68,450", date: "05/17/2026", url: "https://drive.google.com/..." }
+                        ].map((row, rIdx) => (
+                          <div key={rIdx} className="p-3 flex items-center justify-between text-xs hover:bg-slate-50 transition">
+                            <div className="min-w-0 pr-4">
+                              <span className="font-extrabold text-slate-800 block text-xs">{row.v}</span>
+                              <span className="text-[10px] text-slate-400 font-mono">VIN: {row.vin} &bull; {row.miles} miles</span>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-[10px] text-slate-400 font-medium hidden sm:inline">{row.date}</span>
+                              <button type="button" className="bg-slate-100 p-2 rounded-lg text-slate-600 hover:bg-slate-200" title="Copy share link">
+                                <Icons.Share2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button type="button" className="bg-slate-900 p-2 rounded-lg text-white font-bold flex items-center gap-1 hover:bg-slate-800 text-[10px]">
+                                <Icons.Eye className="w-3.5 h-3.5" /> View PDF
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'checklist' && (
+                  <div className="space-y-4 text-left">
+                    <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200">
+                      <div>
+                        <h4 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                           Checklist Templates
+                        </h4>
+                        <p className="text-slate-400 text-[10px] mt-0.5">Customize the items appearing in the rating ledger to reflect vehicle types.</p>
+                      </div>
+                      <button type="button" className="bg-slate-900 text-white font-bold text-xs px-4 py-2 rounded-lg">Save Template Config</button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {[
+                        { name: "Interior/Exterior", items: ["Number of Key(s)", "Entertainment/Radio", "AC Compressor/Controls", "Heater", "Defroster"] },
+                        { name: "Under Hood & Engine", items: ["Engine Fault Codes", "Engine Noise", "Emissions Pass", "Fluids: Oil/Coolant/Washers"] },
+                        { name: "Brake System", items: ["Front Brake Pads", "Front Brake Rotors", "Brake Fluid", "LF/RF Lining Condition"] }
+                      ].map((sec, sIdx) => (
+                        <div key={sIdx} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                          <div className="bg-slate-100/80 px-4 py-2.5 border-b border-slate-200 flex justify-between items-center">
+                            <span className="font-extrabold text-xs text-slate-700">{sec.name}</span>
+                            <span className="text-[10px] bg-slate-200 text-slate-600 px-2 rounded-md font-bold">{sec.items.length} fields</span>
+                          </div>
+                          <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            {sec.items.map((it, iIdx) => (
+                              <div key={iIdx} className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 flex justify-between items-center">
+                                <span className="text-slate-600 font-medium">{it}</span>
+                                <span className="text-[8px] text-slate-300 font-bold uppercase">Template Default</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // ====================================================
+      // MAIN APP ROOT COMPONENT (FROM APP.TSX)
+      // ====================================================
+      function App() {
+        const [activeBenefitIndex, setActiveBenefitIndex] = useState(0);
+
+        const scrollToId = (id) => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth' });
+          }
+        };
+
+        return (
+          <div className="min-h-screen bg-slate-50/50 text-slate-800 font-sans antialiased overflow-x-hidden selection:bg-teal-100 selection:text-teal-900">
+            
+            {/* FLOATING TOP NAVIGATION BAR */}
+            <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-slate-200/60 z-50 transition-all">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 py-4 flex items-center justify-between">
+                
+                {/* Logo Brand */}
+                <div className="flex items-center gap-3 cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                  <div className="w-10 h-10 bg-slate-950 rounded-2xl flex items-center justify-center text-white shadow-lg border border-white/10 relative overflow-hidden group-hover:scale-105 transition-all duration-300">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-teal-500 to-teal-400 opacity-20 transition-opacity duration-300"></div>
+                    <Icons.Car className="w-5 h-5 stroke-[2.2] text-teal-400 relative z-10" />
+                  </div>
+                  <div className="leading-none text-left">
+                    <div className="flex items-center gap-0.5">
+                      <span className="font-black text-xl text-slate-950 tracking-tighter">
+                        PPI<span className="text-transparent bg-clip-text bg-gradient-to-br from-teal-500 to-teal-600">Pro</span>
+                      </span>
+                      <span className="text-teal-500 font-black text-xl leading-none">.click</span>
+                    </div>
+                    <span className="text-[9px] font-black text-slate-400 font-mono tracking-widest block uppercase mt-0.5">VEHICLE AUDITS</span>
+                  </div>
+                </div>
+
+                {/* Nav middle links */}
+                <div className="hidden md:flex items-center gap-8 text-xs font-black text-slate-500 uppercase tracking-widest">
+                  <button type="button" onClick={() => scrollToId('features-section')} className="hover:text-slate-950 cursor-pointer transition">Core Tech</button>
+                  <button type="button" onClick={() => scrollToId('values-section')} className="hover:text-slate-950 cursor-pointer transition">Product Values</button>
+                  <button type="button" onClick={() => scrollToId('showcase-section')} className="hover:text-slate-950 cursor-pointer transition">Pictures of the App</button>
+                </div>
+
+                {/* Action button */}
+                <div className="flex items-center gap-3">
+                  <a 
+                    href="https://ppipro.click" 
+                    target="_blank" 
+                    rel="noopener"
+                    className="text-xs font-black bg-slate-950 hover:bg-slate-800 text-white px-5 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-1.5"
+                  >
+                    Launch Applet <Icons.ArrowRight className="w-4 h-4" />
+                  </a>
+                </div>
+
+              </div>
+            </nav>
+
+            {/* HERO BANNER SECTION */}
+            <header className="relative pt-32 pb-24 sm:pt-40 sm:pb-32 overflow-hidden bg-white">
+              <div className="absolute top-0 left-1/3 w-[800px] h-[800px] bg-teal-500/[0.04] rounded-full blur-[120px] pointer-events-none"></div>
+              <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-blue-500/[0.03] rounded-full blur-[100px] pointer-events-none"></div>
+              
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 space-y-8">
+                
+                <div className="inline-flex items-center gap-2 bg-slate-900/5 px-4 py-1.5 rounded-full text-xs font-bold text-slate-800 tracking-wide uppercase leading-none">
+                  <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span> 
+                  Deploying on <strong className="text-slate-950 font-black">ppipro.click</strong>
+                </div>
+
+                <div className="max-w-4xl mx-auto space-y-4">
+                  <h1 className="text-4xl sm:text-6xl font-extrabold text-slate-950 tracking-tight leading-[1.1]">
+                    The professional platform for <br className="hidden sm:inline" />
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-teal-700">
+                      Pre-Purchase Vehicle Inspections
+                    </span>
+                  </h1>
+                  <p className="text-slate-500 text-sm sm:text-lg max-w-2xl mx-auto leading-relaxed pt-2">
+                    Generate elite, professional-grade automotive reports directly from your mobile device. Instant NHTSA VIN decoding, custom checklists, high-res photos, and real-time private cloud synchronization.
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row justify-center items-center gap-3.5 max-w-md mx-auto">
+                  <a 
+                    href="https://ppipro.click" 
+                    target="_blank" 
+                    rel="noopener"
+                    className="w-full sm:w-auto bg-teal-500 hover:bg-teal-600 text-white font-black text-xs py-4 px-8 rounded-xl shadow-lg shadow-teal-500/20 hover:shadow-teal-500/30 active:scale-95 transition-all text-center flex items-center justify-center gap-2 hover:-translate-y-0.5"
+                  >
+                    <Icons.Sparkles className="w-4 h-4 animate-pulse fill-white/10" /> Launch PPIPro.click
+                  </a>
+                  <button 
+                    type="button"
+                    onClick={() => scrollToId('showcase-section')}
+                    className="w-full sm:w-auto bg-slate-950 hover:bg-slate-800 text-white font-black text-xs py-4 px-8 rounded-xl transition-all text-center shadow-lg hover:shadow-xl flex items-center justify-center gap-1.5 hover:-translate-y-0.5"
+                  >
+                    View Sample Reports <Icons.ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="pt-8 border-t border-slate-100 max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-black text-slate-400">
+                  <span>CERTIFIED VEHICLE AUDITING SYSTEM</span>
+                  <div className="flex gap-4 items-center">
+                    <span>NHTSA DECODE SYNCED</span>
+                    <span className="text-slate-200">|</span>
+                    <span>SECURE STORAGE VAULT</span>
+                  </div>
+                </div>
+
+              </div>
+            </header>
+
+            {/* FEATURES SECTION */}
+            <section className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16" id="features-section">
+              <div className="text-center max-w-2xl mx-auto space-y-3">
+                <span className="text-xs font-bold text-teal-600 bg-teal-50 px-3.5 py-1 rounded-full uppercase tracking-wider">Engine Capabilities</span>
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-950 tracking-tight">Engineered to eliminate vehicle transaction friction</h2>
+                <p className="text-slate-500 text-sm">Everything you need to compile elite field-inspections on standard mobile web browsers.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                
+                <div className="md:col-span-6 bg-white border border-slate-200 p-6 sm:p-8 rounded-3xl shadow-premium space-y-4 text-left">
+                  <div className="w-10 h-10 bg-teal-50 text-teal-600 rounded-xl flex items-center justify-center shadow-inner shrink-0">
+                    <Icons.Zap className="w-5 h-5 stroke-[2.5]" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-slate-950 text-lg">Instant NHTSA VIN decoding</h3>
+                    <p className="text-slate-500 text-xs mt-1.5 leading-relaxed">
+                      Stop typing out production details manually. Enter any standard 17-character vehicle identification number (VIN) and fetch manufacturer specs, series models, build years, and engine displacement parameters instantly.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="md:col-span-6 bg-white border border-slate-200 p-6 sm:p-8 rounded-3xl shadow-premium space-y-4 text-left">
+                  <div className="w-10 h-10 bg-slate-100 text-slate-800 rounded-xl flex items-center justify-center shadow-inner shrink-0">
+                    <Icons.Layers className="w-5 h-5 stroke-[2.5]" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-slate-950 text-lg">Dynamic Checklist Manager</h3>
+                    <p className="text-slate-500 text-xs mt-1.5 leading-relaxed">
+                      Build and arrange Checklist items easily via system admin settings. Manage specific checklist elements such as emissions passing checks, battery terminals voltage, or brake system linings based on standard ASE standards.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="md:col-span-7 bg-white border border-slate-200 p-6 sm:p-8 rounded-3xl shadow-premium flex flex-col sm:flex-row gap-6 items-start text-left">
+                  <div className="w-10 h-10 bg-teal-50 text-teal-600 rounded-xl flex items-center justify-center shadow-inner shrink-0 leading-none">
+                    <Icons.ShieldCheck className="w-5 h-5 stroke-[2.5]" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-slate-950 text-lg">Professional PDF Generation</h3>
+                    <p className="text-slate-500 text-xs mt-1.5 leading-relaxed">
+                      Generate high-fidelity, client-ready vehicle evaluations instantly. Our built-in formatting engine arranges checklists and notes into modular color-coded assessment ledgers with standard pass/attention states.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="md:col-span-5 bg-white border border-slate-200 p-6 sm:p-8 rounded-3xl shadow-premium space-y-4 text-left">
+                  <div className="w-10 h-10 bg-slate-100 text-slate-800 rounded-xl flex items-center justify-center shadow-inner shrink-0">
+                    <Icons.Smartphone className="w-5 h-5 stroke-[2.5]" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-slate-950 text-lg">One-Tap Shared Links</h3>
+                    <p className="text-slate-500 text-xs mt-1.5 leading-relaxed">
+                      Send interactive pre-purchase vehicle summaries and photos directly to prospective buyers via text or email using lightning-fast viewport links with zero software downloads needed.
+                    </p>
+                  </div>
+                </div>
+
+              </div>
+            </section>
+
+            {/* PRODUCT VALUES SECTION */}
+            <section className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12" id="values-section">
+              <div className="text-center max-w-2xl mx-auto space-y-3">
+                <span className="text-xs font-bold text-teal-600 bg-teal-50 px-3.5 py-1 rounded-full uppercase tracking-wider">Product Values</span>
+                <h2 className="text-3xl font-extrabold text-slate-950 tracking-tight">Tailored layouts for both sides of the deal</h2>
+                <p className="text-slate-500 text-sm">Whether you are crawls under a chassis or detailing a trade-in, we optimize the flow.</p>
+              </div>
+
+              {/* Dynamic Selector Toggles */}
+              <div className="max-w-3xl mx-auto bg-slate-100 p-1.5 rounded-2xl border border-slate-200 flex">
+                {CLIENT_BENEFITS.map((b, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setActiveBenefitIndex(idx)}
+                    className={`flex-1 py-3 text-xs font-bold rounded-xl transition-all outline-none ${
+                      activeBenefitIndex === idx 
+                        ? 'bg-white text-slate-950 shadow-md translate-y-[-1px]' 
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    {b.badge}
+                  </button>
+                ))}
+              </div>
+
+              {/* Display Active benefit stats */}
+              <div className="max-w-4xl mx-auto bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-premium">
+                {CLIENT_BENEFITS.map((b, idx) => {
+                  if (activeBenefitIndex !== idx) return null;
+                  return (
+                    <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center text-left">
+                      <div className="md:col-span-5 space-y-4">
+                        <span className="text-[10px] font-bold text-teal-600 uppercase tracking-widest">{b.badge}</span>
+                        <h3 className="text-2xl font-black text-slate-950 tracking-tight">{b.title}</h3>
+                        <p className="text-slate-500 text-xs sm:text-sm leading-relaxed">{b.description}</p>
+                      </div>
+                      <div className="md:col-span-7 space-y-3.5">
+                        {b.points.map((pt, pIdx) => (
+                          <div key={pIdx} className="flex gap-3 items-start text-xs sm:text-sm text-slate-800 bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                            <div className="w-5 h-5 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center shrink-0 mt-0.5">
+                              <Icons.Check className="w-3 h-3 stroke-[3px]" />
+                            </div>
+                            <span>{pt}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* SCREENSHOT CONTAINER WORKFLOW SHOWCASE */}
+            <section className="bg-slate-900 text-white py-24 border-t border-b border-slate-950" id="showcase-section">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+                <div className="text-center max-w-2xl mx-auto space-y-4">
+                  <span className="text-xs font-bold text-teal-400 bg-teal-950/50 border border-teal-500/20 px-3.5 py-1 rounded-full uppercase tracking-wider font-mono">
+                    Pictures of the webapp
+                  </span>
+                  <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Explore the High-Fidelity Interface</h2>
+                  <p className="text-slate-400 text-sm">
+                    Take a walk through the principal viewports of the platform. Designed specifically for professional field appraising and clean online buyer coordination.
+                  </p>
+                </div>
+
+                <VisualShowcase />
+              </div>
+            </section>
+
+            {/* FOOTER */}
+            <footer className="bg-white border-t border-slate-200/80 py-12 text-xs text-slate-500">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+                
+                <div className="space-y-4 text-left">
+                  <div className="flex items-center gap-3 cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                    <div className="w-9 h-9 bg-slate-950 rounded-xl flex items-center justify-center text-white shadow-md border border-white/5 relative overflow-hidden">
+                      <Icons.Car className="w-4.5 h-4.5 text-teal-400 relative z-10" />
+                    </div>
+                    <div className="leading-none text-left">
+                      <div className="flex items-center gap-0.5">
+                        <span className="font-black text-base text-slate-950 tracking-tighter">
+                          PPI<span className="text-transparent bg-clip-text bg-gradient-to-br from-teal-500 to-teal-600">Pro</span>
+                        </span>
+                        <span className="text-teal-500 font-extrabold text-base leading-none">.click</span>
+                      </div>
+                      <span className="text-[8px] font-black text-slate-400 font-mono tracking-wider block uppercase mt-0.5">VEHICLE AUDITS</span>
+                    </div>
+                  </div>
+                  <p className="leading-relaxed text-xs">
+                    Modern automotive evaluations configured directly inside secure private cloud environments. Optimized to prevent inspection friction.
+                  </p>
+                </div>
+
+                <div className="space-y-3 text-left">
+                  <strong className="text-slate-900 tracking-wider uppercase font-black text-[10px] block">Contact Appraiser & Support</strong>
+                  <p className="space-y-2">
+                    <span className="flex items-center gap-2">
+                      <Icons.Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                      <span className="font-semibold text-slate-800">support@ppipro.click</span>
+                    </span>
+                  </p>
+                </div>
+
+                <div className="space-y-3 text-left md:text-right">
+                  <strong className="text-slate-900 tracking-wider uppercase font-black text-[10px] block">Legal Disclaimer</strong>
+                  <p className="leading-normal">
+                    Reports provided through our viewport represents mockups of vehicle evaluation scores. Active reports compiled on the ppipro.click production applet are bound by standard vehicle appraisal agreements.
+                  </p>
+                </div>
+
+              </div>
+
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-slate-100 mt-12 pt-6 text-center font-semibold text-slate-400 text-[11px]">
+                <span>© 2026 PPIPro.Click. All rights reserved.</span>
+              </div>
+            </footer>
+
+          </div>
+        );
+      }
+
+      // Render App
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<App />);
+    </script>
   </body>
 </html>
-

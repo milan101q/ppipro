@@ -1,0 +1,6 @@
+{
+  "name": "PPIPro",
+  "description": "Professional landing page and promotional website to advertise and demonstrate the PPIPro vehicle inspection platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

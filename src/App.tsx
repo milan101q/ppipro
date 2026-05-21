@@ -9,6 +9,39 @@ import { CLIENT_BENEFITS } from './data/mockData';
 
 export default function App() {
   const [activeBenefitIndex, setActiveBenefitIndex] = useState<number>(0);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [submitStatus, setSubmitStatus] = useState<'success' | 'err' | null>(null);
+
+  const handleContactSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+
+    const formData = new FormData(e.currentTarget);
+    // Access key explicitly requested by user
+    formData.append('access_key', '87774ba7-dcf7-411b-9e40-5e0a81ae5151');
+
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json'
+        },
+        body: formData
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSubmitStatus('success');
+        (e.target as HTMLFormElement).reset();
+      } else {
+        setSubmitStatus('err');
+      }
+    } catch (err) {
+      setSubmitStatus('err');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Smooth scroll handler
   const scrollToId = (id: string) => {
@@ -48,18 +81,19 @@ export default function App() {
           <div className="hidden md:flex items-center gap-8 text-xs font-black text-slate-500 uppercase tracking-widest">
             <button type="button" onClick={() => scrollToId('features-section')} className="hover:text-slate-950 cursor-pointer transition">Core Tech</button>
             <button type="button" onClick={() => scrollToId('values-section')} className="hover:text-slate-950 cursor-pointer transition">Product Values</button>
-            <button type="button" onClick={() => scrollToId('showcase-section')} className="hover:text-slate-950 cursor-pointer transition">Pictures of the App</button>
+            <button type="button" onClick={() => scrollToId('showcase-section')} className="hover:text-slate-950 cursor-pointer transition">Simulator</button>
+            <button type="button" onClick={() => scrollToId('contact-section')} className="hover:text-slate-950 cursor-pointer transition">Contact Us</button>
           </div>
 
           {/* Action button */}
           <div className="flex items-center gap-3">
             <a 
-              href="https://ppipro.click" 
+              href="https://script.google.com/macros/s/AKfycbwzjeKZm-Q9sCqFtwA-Y8JMT2Tpcf7MhlqyH_KBiSIB2zLAMz8o8EfGaZeaaLhMm8VXWw/exec" 
               target="_blank" 
               rel="noopener"
               className="text-xs font-black bg-slate-950 hover:bg-slate-800 text-white px-5 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-1.5"
             >
-              Launch Applet <ArrowRight className="w-4 h-4" />
+              Launch App <ArrowRight className="w-4 h-4" />
             </a>
           </div>
 
@@ -96,21 +130,21 @@ export default function App() {
           </div>
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-3.5 max-w-md mx-auto">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-3.5 max-w-sm mx-auto">
             <a 
-              href="https://ppipro.click" 
+              href="https://script.google.com/macros/s/AKfycbwzjeKZm-Q9sCqFtwA-Y8JMT2Tpcf7MhlqyH_KBiSIB2zLAMz8o8EfGaZeaaLhMm8VXWw/exec" 
               target="_blank" 
               rel="noopener"
-              className="w-full sm:w-auto bg-teal-500 hover:bg-teal-600 text-white font-black text-xs py-4 px-8 rounded-xl shadow-lg shadow-teal-500/20 hover:shadow-teal-500/30 active:scale-95 transition-all text-center flex items-center justify-center gap-2 hover:-translate-y-0.5"
+              className="w-full bg-teal-500 hover:bg-teal-600 text-white font-black text-xs py-4 px-8 rounded-xl shadow-lg shadow-teal-500/20 hover:shadow-teal-500/30 active:scale-95 transition-all text-center flex items-center justify-center gap-2 hover:-translate-y-0.5"
             >
-              <Sparkles className="w-4 h-4 animate-pulse fill-white/10" /> Launch PPIPro.click
+              <Sparkles className="w-4 h-4 animate-pulse fill-white/10" /> Launch App
             </a>
             <button 
               type="button"
               onClick={() => scrollToId('showcase-section')}
-              className="w-full sm:w-auto bg-slate-950 hover:bg-slate-800 text-white font-black text-xs py-4 px-8 rounded-xl transition-all text-center shadow-lg hover:shadow-xl flex items-center justify-center gap-1.5 hover:-translate-y-0.5"
+              className="w-full bg-slate-950 hover:bg-slate-800 text-white font-black text-xs py-4 px-8 rounded-xl transition-all text-center shadow-lg hover:shadow-xl flex items-center justify-center gap-1.5 hover:-translate-y-0.5"
             >
-              View Sample Reports <ArrowRight className="w-4 h-4" />
+              Test Mobile Simulator <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
@@ -265,6 +299,107 @@ export default function App() {
           </div>
 
           <VisualShowcase />
+        </div>
+      </section>
+
+      {/* ==================================================== */}
+      {/* CONTACT SECTION WITH WEB3FORMS INTEGRATION */}
+      {/* ==================================================== */}
+      <section className="py-20 bg-slate-50 border-t border-b border-slate-200" id="contact-section">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-12 space-y-4">
+            <span className="text-xs font-bold text-teal-600 bg-teal-50 px-3.5 py-1 rounded-full uppercase tracking-wider">Get in Touch</span>
+            <h2 className="text-3xl font-extrabold text-slate-950 tracking-tight">Connect with the Appraisers</h2>
+            <p className="text-slate-550 text-sm">
+              Have questions about vehicle pre-purchase inspections or want to custom-tailor checklists? Reach out to us below.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-premium p-6 sm:p-10 text-left">
+            <form onSubmit={handleContactSubmit} className="space-y-6">
+              {/* Web3Forms Access Key explicitly requested */}
+              <input type="hidden" name="access_key" value="87774ba7-dcf7-411b-9e40-5e0a81ae5151" />
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-slate-750 uppercase tracking-wider mb-2">Your Name</label>
+                  <input 
+                    type="text" 
+                    name="name" 
+                    required 
+                    placeholder="John Doe"
+                    className="w-full bg-slate-50/50 border border-slate-250 focus:border-teal-500 rounded-xl px-4 py-3.5 text-xs font-semibold focus:outline-none transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-750 uppercase tracking-wider mb-2">Email Address</label>
+                  <input 
+                    type="email" 
+                    name="email" 
+                    required 
+                    placeholder="john@example.com"
+                    className="w-full bg-slate-50/50 border border-slate-250 focus:border-teal-500 rounded-xl px-4 py-3.5 text-xs font-semibold focus:outline-none transition"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-750 uppercase tracking-wider mb-2">Subject / Request Type</label>
+                <select 
+                  name="subject" 
+                  className="w-full bg-slate-50/50 border border-slate-250 focus:border-teal-500 rounded-xl px-4 py-3.5 text-xs font-semibold focus:outline-none transition text-slate-700"
+                >
+                  <option value="General Query">General Query</option>
+                  <option value="Custom Checklist Template Integration">Custom Checklist Integration</option>
+                  <option value="Enterprise Inspection Workflow Setup">Enterprise Applet Setup</option>
+                  <option value="Technical Support">Technical Support</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-755 uppercase tracking-wider mb-2">Message</label>
+                <textarea 
+                  name="message" 
+                  rows={4} 
+                  required 
+                  placeholder="Tell us about the vehicle inspect templates or support queries you have..."
+                  className="w-full bg-slate-50/50 border border-slate-250 focus:border-teal-500 rounded-xl px-4 py-3.5 text-xs font-semibold focus:outline-none transition resize-none"
+                ></textarea>
+              </div>
+
+              {submitStatus && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`p-4 rounded-xl text-xs font-semibold ${
+                    submitStatus === 'success' 
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-100' 
+                      : 'bg-red-50 text-red-800 border border-red-100'
+                  }`}
+                >
+                  {submitStatus === 'success' 
+                    ? 'Thank you! Your message has been sent successfully.' 
+                    : 'Oops! Something went wrong. Please check your network and try again.'}
+                </motion.div>
+              )}
+
+              <button 
+                type="submit" 
+                disabled={isSubmitting}
+                className="w-full bg-teal-500 hover:bg-teal-600 disabled:bg-teal-400 text-white font-black text-xs py-4 px-8 rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" /> Sending Message...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="w-4 h-4" /> Send Secure Message via Web3Forms
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
         </div>
       </section>
 

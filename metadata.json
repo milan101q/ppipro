@@ -1,6 +1,6 @@
 {
-  "name": "PPIPro",
-  "description": "Professional landing page and promotional website to advertise and demonstrate the PPIPro vehicle inspection platform.",
+  "name": "PPPro.Click",
+  "description": "Professional landing page and promotional website for PPPro.Click, with the high-fidelity PPIPro vehicle inspection platform mobile wizard view.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
